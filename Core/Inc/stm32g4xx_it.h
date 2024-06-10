@@ -59,6 +59,7 @@ void EXTI4_IRQHandler(void);
 void USB_HP_IRQHandler(void);
 void USB_LP_IRQHandler(void);
 void TIM3_IRQHandler(void);
+void I2C2_EV_IRQHandler(void);
 void SPI1_IRQHandler(void);
 void DMA2_Channel2_IRQHandler(void);
 void DMA2_Channel5_IRQHandler(void);

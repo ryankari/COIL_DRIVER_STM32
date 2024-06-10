@@ -34,6 +34,9 @@ extern "C" {
 //#include "encoder.h"
 #include "DAC80501.h"
 #include "ADS131M_Func.h"
+#include "EEPROM.h"
+void USB_CDC_RxHandler(uint8_t*, uint32_t);
+void USB_CDC_RxHandler(uint8_t*, uint32_t);
 
 /* USER CODE END Includes */
 
@@ -60,6 +63,16 @@ typedef union {
 } TxData_typedef;
 
 
+#define EEPROM_byte_length 8
+typedef union {
+	uint8_t RxData[EEPROM_byte_length];
+	struct {
+		uint16_t int1;
+		uint16_t int2;
+		uint16_t int3;
+		uint16_t int4;
+	} Integers;
+} EEPROM_Data_typedef;
 
 typedef struct {
 	union {
@@ -82,7 +95,7 @@ typedef struct {
         uint32_t executeRandomPosition : 1;
         uint32_t randomPositionUnitialized : 1;
         uint32_t rampMotorOn :1;
-        uint32_t unused1:1;
+        uint32_t I2Cinterrupt:1;
         uint32_t unused2:1;
         uint32_t unused3:1;
         uint32_t unused4:1;

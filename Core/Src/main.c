@@ -22,6 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "usbd_cdc_if.h"
+//#include "usbd_customhid.h"
 //#include "usbd_customhid.h"
 /* USER CODE END Includes */
 
@@ -55,12 +57,9 @@ TIM_HandleTypeDef htim3;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-//extern USBD_HandleTypeDef hUsbDeviceFS;
-uint8_t tx_buffer[64];		//Variable to store the output data
-uint8_t report_buffer[64];		//Variable to receive the report buffer
-uint8_t flag_rx = 0;			//Variable to store the reception flag
+extern USBD_HandleTypeDef hUsbDeviceFS;
 
-rx_buffer_typedef rx_buffer_struct;
+//rx_buffer_typedef rx_buffer_struct;
 
 STATE_typedef STATE;
 
@@ -71,6 +70,7 @@ spi_buffer_typedef tx_spi_buffer,rx_spi_buffer;
 ADC_STATUS_TYPEDEF ADC_STATUS;
 ads_data_typedef ADC_DATA;
 uint32_t STATE_SPI;
+EEPROM_Data_typedef EEPROM_Data;
 
 /* USER CODE END PV */
 
@@ -90,6 +90,15 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#define bufferLength 1024
+
+
+// ------------------------------------------------------------------------------//
+void send_uint16_array(uint16_t *data) {
+    uint8_t *byte_data = (uint8_t *)data;
+    CDC_Transmit_FS(byte_data, bufferLength*2);
+}
+// ------------------------------------------------------------------------------//
 
 /* USER CODE END 0 */
 
@@ -134,25 +143,31 @@ int main(void)
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 
   // Start PWM Output on TIM1 Channel 2 and Channel 2N
-  if (HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2) != HAL_OK)
-  {
-      Error_Handler();
-  }
+  if (HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2) != HAL_OK)   {      Error_Handler();   }
 
-  if (HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2) != HAL_OK)
-  {
-      Error_Handler();
-  }
-
-
+  if (HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2) != HAL_OK)   {       Error_Handler();   }
 
   if (HAL_TIM_Base_Start_IT(&htim3) != HAL_OK)  {   Error_Handler();  }
 
   DAC_Initialize(&hi2c2);
 
-  uint32_t error;
-  error = ADS131M08_init(&STATE_SPI);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
+ADS131M08_init(&STATE_SPI);
+
+HAL_GPIO_WritePin(GPIOB, LED1_Pin,1);
+HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
+
+
+	uint16_t TxBuffer[bufferLength];
+	for (uint16_t i=0;i<1024;i++) {
+		TxBuffer[i] = i;
+	}
+	uint16_t eepromData[] = {0x1234,0x5678,0xABCD};
+
+
+ //   HAL_StatusTypeDef status = EEPROM_WriteBytes(&hi2c2, 0x0, eepromData, sizeof(eepromData)); // Write data to address 0x0
+
+    EEPROM_ReadByte(&hi2c2,0);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -163,9 +178,15 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  if (STATE.VALUES.BITS.stateTIM3 == 1) {
-		  DAC_Send(&hi2c2,increment);
+		  //DAC_Send(&hi2c2,increment);
 		  STATE.VALUES.BITS.stateTIM3 = 0;
+
+		    send_uint16_array(TxBuffer);
+
 	  }
+
+
+
   }
   /* USER CODE END 3 */
 }
@@ -186,16 +207,17 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSI48;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
-  RCC_OscInitStruct.PLL.PLLN = 12;
+  RCC_OscInitStruct.PLL.PLLN = 16;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV4;
-  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -205,12 +227,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -275,7 +297,7 @@ static void MX_I2C2_Init(void)
 
   /* USER CODE END I2C2_Init 1 */
   hi2c2.Instance = I2C2;
-  hi2c2.Init.Timing = 0x0010061A;
+  hi2c2.Init.Timing = 0x00602173;
   hi2c2.Init.OwnAddress1 = 0;
   hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -610,6 +632,11 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void USB_CDC_RxHandler(uint8_t* Buf, uint32_t Len)
+{
+    CDC_Transmit_FS(Buf, Len);
+}
+
 
 /* USER CODE END 4 */
 
