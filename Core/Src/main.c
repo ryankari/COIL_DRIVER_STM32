@@ -22,7 +22,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "main.h"
 #include "usbd_cdc_if.h"
+#include <math.h>
+#include "Queue.h"
 //#include "usbd_customhid.h"
 //#include "usbd_customhid.h"
 /* USER CODE END Includes */
@@ -46,16 +49,19 @@
 FDCAN_HandleTypeDef hfdcan1;
 
 I2C_HandleTypeDef hi2c2;
+DMA_HandleTypeDef hdma_i2c2_tx;
 
 SPI_HandleTypeDef hspi1;
 DMA_HandleTypeDef hdma_spi1_rx;
 DMA_HandleTypeDef hdma_spi1_tx;
 
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart3;
 
+DMA_HandleTypeDef hdma_memtomem_dma1_channel2;
 /* USER CODE BEGIN PV */
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
@@ -63,7 +69,7 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 
 STATE_typedef STATE;
 
-uint16_t increment; // Used for testing DAC
+
 
 // Used for ADC
 spi_buffer_typedef tx_spi_buffer,rx_spi_buffer;
@@ -84,21 +90,23 @@ static void MX_I2C2_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-#define bufferLength 1024
 
 
-// ------------------------------------------------------------------------------//
-void send_uint16_array(uint16_t *data) {
-    uint8_t *byte_data = (uint8_t *)data;
-    CDC_Transmit_FS(byte_data, bufferLength*2);
-}
-// ------------------------------------------------------------------------------//
+// Create sine wave and store on look up table
+uint16_t USBReceivedBuf[USBReceiveLength];
+
+
+uint16_t DAC_BUFFER[DAC_BUFFER_LENGTH];
+
+StateQueue_t stateQueue;
+uint16_t TxBuffer[bufferLength];
 
 /* USER CODE END 0 */
 
@@ -111,6 +119,14 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
+
+
+	float temp;
+	for (uint16_t i=0;i<DAC_BUFFER_LENGTH;i++) {
+
+		temp = sinf(2*PI*i/DAC_BUFFER_LENGTH)+1;
+		DAC_BUFFER[i] = (int16_t)(32768 * temp);
+	}
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -139,17 +155,15 @@ int main(void)
   MX_USART3_UART_Init();
   MX_TIM3_Init();
   MX_USB_Device_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 
   // Start PWM Output on TIM1 Channel 2 and Channel 2N
   if (HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2) != HAL_OK)   {      Error_Handler();   }
-
   if (HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2) != HAL_OK)   {       Error_Handler();   }
 
-  if (HAL_TIM_Base_Start_IT(&htim3) != HAL_OK)  {   Error_Handler();  }
-
-  DAC_Initialize(&hi2c2);
+DAC_Initialize(&hi2c2);
 
 ADS131M08_init(&STATE_SPI);
 
@@ -157,10 +171,8 @@ HAL_GPIO_WritePin(GPIOB, LED1_Pin,1);
 HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
 
 
-	uint16_t TxBuffer[bufferLength];
-	for (uint16_t i=0;i<1024;i++) {
-		TxBuffer[i] = i;
-	}
+
+
 	uint16_t eepromData[] = {0x1234,0x5678,0xABCD};
 
 
@@ -168,6 +180,16 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
 
     EEPROM_ReadByte(&hi2c2,0);
 
+
+    // Start TIM2
+    //if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK) { Error_Handler();  }
+   // HAL_TIM_Base_Stop_IT(&htim2) ;
+
+    if (HAL_TIM_Base_Start_IT(&htim3) != HAL_OK)  {   Error_Handler();  }
+    __disable_irq();
+    DAC_Send_DMA(&hi2c2,5000);
+
+	initQueue(&stateQueue);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -177,15 +199,58 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if (STATE.VALUES.BITS.stateTIM3 == 1) {
-		  //DAC_Send(&hi2c2,increment);
-		  STATE.VALUES.BITS.stateTIM3 = 0;
 
-		    send_uint16_array(TxBuffer);
-
+	  if (!isQueueEmpty(&stateQueue)) {
+	              State_t currentState = dequeue(&stateQueue);
+	              switch (currentState) {
+	                  case STATE_TIM2:
+	                      handleStateTIM2();
+	                      break;
+	                  case STATE_TIM3:
+	                      handleStateTIM3();
+	                      break;
+	                  case STATE_USB_RECEIVED:
+	                      handleUSBReceived();
+	                      break;
+	                  default:
+	                	  break;
+	              }
 	  }
 
 
+
+	  /*
+	  if (STATE.VALUES.BITS.stateTIM2) {
+		  STATE.VALUES.BITS.stateTIM2 = 0;
+		 // DAC_Send_DMA(&hi2c2,5000);
+		  //DAC_Send_DMA(&hi2c2,DAC_BUFFER[dacIndex]);
+		  dacIndex++;
+		  if (dacIndex>DAC_BUFFER_LENGTH) {
+			  dacIndex = 0;
+		  }
+	  }
+*/
+/*
+	  if (STATE.VALUES.BITS.stateTIM3) {
+		  //DAC_Send_DMA(&hi2c2,increment)
+		    STATE.VALUES.BITS.stateTIM3 = 0;
+			TxBuffer[0] = increment;
+			increment++;
+			TxBuffer[1]	= ADC_DATA.data0;
+			TxBuffer[2]	= ADC_DATA.data1;
+			TxBuffer[3]	= ADC_DATA.data2;
+			TxBuffer[4]	= ADC_DATA.data3;
+			TxBuffer[5] = 0;
+			TxBuffer[6] = 0;
+		    send_uint16_array(TxBuffer);
+	  }
+*/
+	  /*
+	  if (STATE.VALUES.BITS.USBreceived) {
+		  STATE.VALUES.BITS.USBreceived = 0;
+		  DAC_Send_DMA(&hi2c2,USBReceivedBuf[0]);
+	  }
+*/
 
   }
   /* USER CODE END 3 */
@@ -453,6 +518,65 @@ static void MX_TIM1_Init(void)
 }
 
 /**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 0;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 7999;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_OC_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_TIMING;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_OC_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+  HAL_TIM_MspPostInit(&htim2);
+
+}
+
+/**
   * @brief TIM3 Initialization Function
   * @param None
   * @retval None
@@ -473,8 +597,8 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 15;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 1000;
-  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.Period = 20000;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
   {
@@ -547,6 +671,8 @@ static void MX_USART3_UART_Init(void)
 
 /**
   * Enable DMA controller clock
+  * Configure DMA for memory to memory transfers
+  *   hdma_memtomem_dma1_channel2
   */
 static void MX_DMA_Init(void)
 {
@@ -554,8 +680,27 @@ static void MX_DMA_Init(void)
   /* DMA controller clock enable */
   __HAL_RCC_DMAMUX1_CLK_ENABLE();
   __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* Configure DMA request hdma_memtomem_dma1_channel2 on DMA1_Channel2 */
+  hdma_memtomem_dma1_channel2.Instance = DMA1_Channel2;
+  hdma_memtomem_dma1_channel2.Init.Request = DMA_REQUEST_MEM2MEM;
+  hdma_memtomem_dma1_channel2.Init.Direction = DMA_MEMORY_TO_MEMORY;
+  hdma_memtomem_dma1_channel2.Init.PeriphInc = DMA_PINC_ENABLE;
+  hdma_memtomem_dma1_channel2.Init.MemInc = DMA_MINC_ENABLE;
+  hdma_memtomem_dma1_channel2.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+  hdma_memtomem_dma1_channel2.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+  hdma_memtomem_dma1_channel2.Init.Mode = DMA_NORMAL;
+  hdma_memtomem_dma1_channel2.Init.Priority = DMA_PRIORITY_LOW;
+  if (HAL_DMA_Init(&hdma_memtomem_dma1_channel2) != HAL_OK)
+  {
+    Error_Handler( );
+  }
 
   /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
   /* DMA2_Channel2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Channel2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Channel2_IRQn);

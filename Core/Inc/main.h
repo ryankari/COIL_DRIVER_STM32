@@ -35,8 +35,23 @@ extern "C" {
 #include "DAC80501.h"
 #include "ADS131M_Func.h"
 #include "EEPROM.h"
+#include "Queue.h"
+
+extern StateQueue_t stateQueue;
+
+#define DAC_BUFFER_LENGTH 1000
+#define bufferLength 16
+#define USBReceiveLength 64
+#define PI 3.14159265358979323846
+
 void USB_CDC_RxHandler(uint8_t*, uint32_t);
 void USB_CDC_RxHandler(uint8_t*, uint32_t);
+
+void handleStateTIM2(void);
+void handleStateTIM3(void);
+void handleUSBReceived(void);
+
+
 
 /* USER CODE END Includes */
 
@@ -61,6 +76,8 @@ typedef union {
 		uint16_t int4;
 	} Integers;
 } TxData_typedef;
+
+
 
 
 #define EEPROM_byte_length 8
@@ -96,7 +113,7 @@ typedef struct {
         uint32_t randomPositionUnitialized : 1;
         uint32_t rampMotorOn :1;
         uint32_t I2Cinterrupt:1;
-        uint32_t unused2:1;
+        uint32_t USBReceived:1;
         uint32_t unused3:1;
         uint32_t unused4:1;
         uint32_t unused5:1;
@@ -107,6 +124,8 @@ typedef struct {
 		} BITS;
 	} VALUES;
 } STATE_typedef;
+
+extern STATE_typedef STATE;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

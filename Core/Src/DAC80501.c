@@ -23,10 +23,21 @@ HAL_StatusTypeDef DAC_Send(I2C_HandleTypeDef *hi2c_handle,uint16_t Data) {
 	sendData[0] = DACDATAcmd;
 	sendData[1] = Data & 0xFF;
 	sendData[2] = (Data&0xFF00)>>8;
-
-
     //i2cStatus = HAL_I2C_Master_Send(hi2c_handle, FX29ReadAddr<<1, sendData, 2, HAL_MAX_DELAY);
     i2cStatus = HAL_I2C_Master_Transmit(hi2c_handle, DAC_Address<<1, sendData, 3, HAL_MAX_DELAY);
+
+    return i2cStatus;
+}
+
+// Function to sendData to the DAC80501
+HAL_StatusTypeDef DAC_Send_DMA(I2C_HandleTypeDef *hi2c_handle,uint16_t Data) {
+	//[Address Byte][Command byte][MSDB][LSDB]
+	sendData[0] = DACDATAcmd;
+	sendData[1] = (Data&0xFF00)>>8;
+	sendData[2] = Data & 0xFF;
+
+    //i2cStatus = HAL_I2C_Master_Send(hi2c_handle, FX29ReadAddr<<1, sendData, 2, HAL_MAX_DELAY);
+    i2cStatus = HAL_I2C_Master_Transmit_DMA(hi2c_handle, DAC_Address<<1, sendData, 3);
 
     return i2cStatus;
 }
