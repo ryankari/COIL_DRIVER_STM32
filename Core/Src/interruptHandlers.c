@@ -6,7 +6,6 @@
 void handleStateTIM2(void) {
 		static uint16_t dacIndex;
 		dacIndex = 0;
-		  STATE.VALUES.BITS.stateTIM2 = 0;
 		 // DAC_Send_DMA(&hi2c2,5000);
 		  //DAC_Send_DMA(&hi2c2,DAC_BUFFER[dacIndex]);
 		  dacIndex++;
@@ -29,7 +28,6 @@ void handleStateTIM3(void) {
 	extern ads_data_typedef ADC_DATA;
 	extern uint16_t TxBuffer[bufferLength];
 	static uint16_t increment; // Used for testing DAC
-    STATE.VALUES.BITS.stateTIM3 = 0;
 	TxBuffer[0] = increment;
 	increment++;
 	TxBuffer[1]	= ADC_DATA.data0;
@@ -45,6 +43,17 @@ void handleStateTIM3(void) {
 void handleUSBReceived(void) {
 	extern I2C_HandleTypeDef hi2c2;
 	extern uint16_t USBReceivedBuf[USBReceiveLength];
+	extern TIM_HandleTypeDef htim6;
 	  STATE.VALUES.BITS.USBreceived = 0;
 	  DAC_Send_DMA(&hi2c2,USBReceivedBuf[0]);
+
+	  if (USBReceivedBuf[1] == 1) {
+
+		  STATE.VALUES.BITS.sendSineWave = 1;
+		  htim6.Init.Prescaler = USBReceivedBuf[2];
+		  if (HAL_TIM_Base_Init(&htim6) != HAL_OK) {Error_Handler(); }
+
+	  }
+
+
 }

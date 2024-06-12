@@ -5,9 +5,10 @@
 
 	typedef enum {
 		STATE_IDLE = 0,
-		STATE_TIM2,
+		STATE_TIM6,
 		STATE_TIM3,
-		STATE_USB_RECEIVED
+		STATE_USB_RECEIVED,
+		STATE_SEND_SINE
 	} State_t;
 
 	typedef struct {

@@ -97,7 +97,7 @@ typedef struct {
 	struct {
         uint32_t USBreceived : 1;
         uint32_t stateTIM1 : 1;
-        uint32_t stateTIM2 : 1;
+        uint32_t stateTIM6 : 1;
         uint32_t stateTIM3 : 1;
         uint32_t buttonPress : 1;
         uint32_t sendData : 1;
@@ -114,7 +114,7 @@ typedef struct {
         uint32_t rampMotorOn :1;
         uint32_t I2Cinterrupt:1;
         uint32_t USBReceived:1;
-        uint32_t unused3:1;
+        uint32_t sendSineWave:1;
         uint32_t unused4:1;
         uint32_t unused5:1;
         uint32_t unused6:1;
