@@ -39,8 +39,9 @@ extern "C" {
 
 extern StateQueue_t stateQueue;
 
-#define DAC_BUFFER_LENGTH 1000
-#define bufferLength 16
+#define DAC_BUFFER_LENGTH 100
+#define USBTXbufferSize 100
+#define USBTXbufferLength 100
 #define USBReceiveLength 64
 #define PI 3.14159265358979323846
 
@@ -50,21 +51,19 @@ void USB_CDC_RxHandler(uint8_t*, uint32_t);
 void handleStateTIM2(void);
 void handleStateTIM3(void);
 void handleUSBReceived(void);
+void handleBufferOutput(void);
 
+#define START_USB_UPDATE_PACKET_TIMER  if (HAL_TIM_Base_Start_IT(&htim3) != HAL_OK)  {   Error_Handler();  }
+#define STOP_USB_UPDATE_PACKET_TIMER  if (HAL_TIM_Base_Stop_IT(&htim3) != HAL_OK)  {   Error_Handler();  }
+
+#define START_BURST_LOG_TIMER if (HAL_TIM_Base_Start_IT(&htim7) != HAL_OK)  {   Error_Handler();  }
+#define STOP_BURST_LOG_TIMER if (HAL_TIM_Base_Start_IT(&htim7) != HAL_OK)  {   Error_Handler();  }
 
 
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-typedef struct {
-	union {
-		uint8_t rx_buffer[64];
-		uint16_t rx_buffer_int[32];
-		uint32_t rx_buffer_long[16];
-	} UN;
-} rx_buffer_typedef;
-
 
 
 typedef union {
@@ -115,9 +114,9 @@ typedef struct {
         uint32_t I2Cinterrupt:1;
         uint32_t USBReceived:1;
         uint32_t sendSineWave:1;
-        uint32_t unused4:1;
-        uint32_t unused5:1;
-        uint32_t unused6:1;
+        uint32_t stateTIM7:1;
+        uint32_t sendPeriodicUSB:1;
+        uint32_t BufferFull:1;
         uint32_t unused7:1;
         uint32_t unusedCHar:8;
 
@@ -126,6 +125,39 @@ typedef struct {
 } STATE_typedef;
 
 extern STATE_typedef STATE;
+
+
+typedef struct {
+    unsigned int Amplitude;
+    int Offset;
+    unsigned int Freq;
+    unsigned int Cycles;
+    int numCycles;
+    uint16_t PtsPerCycle;
+    union {
+        unsigned int REGISTER;
+        struct {
+            uint8_t CTRL_CYCLES:1;
+            uint8_t DACON:1;
+            uint16_t UPDATE_WAVEFORM:1;
+            uint16_t bit3:1;
+            uint16_t DAC_Status_Update_Display:1;
+            uint16_t TFActive:1;
+            uint16_t bit6:1;
+            uint16_t bit7:1;
+            uint16_t bit8:1;
+            uint16_t bit9:1;
+            uint16_t bit10:1;
+            uint16_t bit11:1;
+            uint16_t bit12:1;
+            uint16_t bit13:1;
+            uint16_t bit14:1;
+            uint16_t bit15:1;
+        } STATES;
+    };
+} coilParams_typedef;
+extern coilParams_typedef coilParams;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

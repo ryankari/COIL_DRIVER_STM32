@@ -64,6 +64,7 @@ extern DMA_HandleTypeDef hdma_spi1_tx;
 extern SPI_HandleTypeDef hspi1;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim7;
 /* USER CODE BEGIN EV */
 extern STATE_typedef STATE;
 /* USER CODE END EV */
@@ -216,10 +217,10 @@ void EXTI4_IRQHandler(void)
   /* USER CODE END EXTI4_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(DRDY_Pin);
   /* USER CODE BEGIN EXTI4_IRQn 1 */
-	if (__HAL_GPIO_EXTI_GET_IT(DRDY_Pin) != RESET) {
+	//if (__HAL_GPIO_EXTI_GET_IT(DRDY_Pin) != RESET) {
 		triggerADC();
 		HAL_GPIO_EXTI_IRQHandler(DRDY_Pin);
-	}
+//	}
   /* USER CODE END EXTI4_IRQn 1 */
 }
 
@@ -321,6 +322,20 @@ void TIM6_DAC_IRQHandler(void)
   /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
   STATE.VALUES.BITS.stateTIM6 = 1;
   /* USER CODE END TIM6_DAC_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM7 global interrupt.
+  */
+void TIM7_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM7_IRQn 0 */
+
+  /* USER CODE END TIM7_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim7);
+  /* USER CODE BEGIN TIM7_IRQn 1 */
+  STATE.VALUES.BITS.stateTIM7 = 1;
+  /* USER CODE END TIM7_IRQn 1 */
 }
 
 /**

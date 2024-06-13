@@ -45,9 +45,19 @@ uint32_t setGain(uint16_t gain);
 #define mode_24_bit	0x0104
 #define mode_32_bit	0x0304
 #define gain1_addr	4
-#define pgagainx1	0x0000
+#define adsClock_addr 3
+#define pgagainx1	0x2000
 #define pgagainx2	0x1111
 #define pgagainx4	0x2222
+
+#define adsOSR16256 0x0F1F
+#define adsOSR8192 0x0F1B
+#define adsOSR128 0x0F03
+#define adsOSR256  0x0F07
+#define adsOSR512  0x0F0B
+#define adsOSR1024 0x0F0F //Default
+#define adsOSR2048 0x0F13
+
 
 #define SS_Pin GPIO_PIN_4
 #define SS_GPIO_Port GPIOA
