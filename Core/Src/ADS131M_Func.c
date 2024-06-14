@@ -25,7 +25,7 @@ uint32_t ADS131M08_init(uint32_t* STATE_SPI) {
 	  if (error > 0) {
 		  return(error);
 	  }
-	  error = ADS131M08_cmd_interrupt(wreg,adsClock_addr,adsOSR512);
+	  error = ADS131M08_cmd_interrupt(wreg,adsClock_addr,adsOSR1024);
 	  if (error > 0) {
 		  return(error);
 	  }

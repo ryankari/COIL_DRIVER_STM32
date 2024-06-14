@@ -39,17 +39,19 @@ extern "C" {
 
 extern StateQueue_t stateQueue;
 
-#define DAC_BUFFER_LENGTH 100
-#define USBTXbufferSize 100
-#define USBTXbufferLength 100
+#define BUFFER_LENGTH 1000
+#define BUFFER_HEADER_LENGTH 10
+#define USBTXbufferSize (BUFFER_LENGTH+BUFFER_HEADER_LENGTH)
+//#define USBTXbufferLength 510
 #define USBReceiveLength 64
+
 #define PI 3.14159265358979323846
 
 void USB_CDC_RxHandler(uint8_t*, uint32_t);
 void USB_CDC_RxHandler(uint8_t*, uint32_t);
 
 void handleStateTIM2(void);
-void handleStateTIM3(void);
+void handleStateSendPeriodicData(void);
 void handleUSBReceived(void);
 void handleBufferOutput(void);
 

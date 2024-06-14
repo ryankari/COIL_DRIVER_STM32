@@ -42,6 +42,7 @@ uint32_t setGain(uint16_t gain);
 #define mode_addr	0x02
 
 #define mode_16_bit	0x0004
+#define mode_16_bit_lowDRDY	0x0005 //Results in freezing
 #define mode_24_bit	0x0104
 #define mode_32_bit	0x0304
 #define gain1_addr	4
@@ -123,10 +124,10 @@ typedef struct ads_16bitout {
 
 
 typedef struct ads_16bit_data {
-	uint16_t data0;
-	uint16_t data1;
-	uint16_t data2;
-	uint16_t data3;
+	int16_t data0;
+	int16_t data1;
+	int16_t data2;
+	int16_t data3;
 } ads_data_typedef;
 
 

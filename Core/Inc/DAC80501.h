@@ -2,7 +2,7 @@
 
 	#define DAC80501
 	HAL_StatusTypeDef DAC_Send(I2C_HandleTypeDef *,uint16_t Data);
-	HAL_StatusTypeDef DAC_Send_DMA(I2C_HandleTypeDef *hi2c_handle,uint16_t Data);
+	HAL_StatusTypeDef DAC_Send_DMA(I2C_HandleTypeDef *hi2c_handle,int16_t Data);
 	HAL_StatusTypeDef DAC_Initialize(I2C_HandleTypeDef *hi2c_handle) ;
 
 	#define DAC_Address     0b1001000

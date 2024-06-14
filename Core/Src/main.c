@@ -104,12 +104,15 @@ static void MX_TIM7_Init(void);
 uint16_t USBReceivedBuf[USBReceiveLength];
 
 
-uint16_t DAC_BUFFER[DAC_BUFFER_LENGTH];
+uint16_t DAC_BUFFER[BUFFER_LENGTH];
 
 StateQueue_t stateQueue;
-uint16_t TxBuffer[USBTXbufferSize];
-uint16_t BufferA[USBTXbufferSize];
-uint16_t BufferB[USBTXbufferSize];
+int16_t TxBuffer[USBTXbufferSize];
+int16_t BufferA[BUFFER_LENGTH];
+int16_t BufferB[BUFFER_LENGTH];
+int16_t BufferC[BUFFER_LENGTH];
+int16_t BufferD[BUFFER_LENGTH];
+int16_t BufferE[BUFFER_LENGTH];
 
 uint16_t dacIndex;
 
@@ -125,12 +128,16 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
 
-
+	coilParams.Amplitude = 25000;
+	coilParams.Offset = 0;
+	coilParams.numCycles = 32;
+	//htim7.Init.Prescaler = 50;
+	// if (HAL_TIM_Base_Init(&htim7) != HAL_OK)  {Error_Handler();  }
+	//Freq = Xtal/Prescalar/Counter/BUFFER_LENGTH/Cycles
 	float temp;
-	for (uint16_t i=0;i<DAC_BUFFER_LENGTH;i++) {
-
-		temp = 0.5*sinf(2*PI*i/DAC_BUFFER_LENGTH)+1;
-		DAC_BUFFER[i] = (int16_t)(32768 * temp);
+	for (uint16_t i=0;i<BUFFER_LENGTH;i++) {
+		temp = 0.5*sinf(2*PI*i/BUFFER_LENGTH*coilParams.numCycles);
+		DAC_BUFFER[i] = (int16_t)(coilParams.Amplitude * temp)+coilParams.Offset;
 	}
   /* USER CODE END 1 */
 
@@ -193,7 +200,7 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
     //if (HAL_TIM_Base_Start_IT(&htim3) != HAL_OK)  {   Error_Handler();  }
     START_USB_UPDATE_PACKET_TIMER
 	START_BURST_LOG_TIMER
-    DAC_Send_DMA(&hi2c2,32768);
+    DAC_Send_DMA(&hi2c2,0);
 
 	  __HAL_TIM_SET_COUNTER(&htim6, 0);
 	  //START_BURST_LOG_TIMER
@@ -234,10 +241,16 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
 			  STATE.VALUES.BITS.stateTIM7 = 0;
 	//	  handleStateTIM2();
 					  DAC_Send_DMA(&hi2c2,DAC_BUFFER[dacIndex]);
-					  BufferA[dacIndex] = DAC_BUFFER[dacIndex];
+					  BufferA[dacIndex] =  ADC_DATA.data0;
+					  BufferB[dacIndex] =  ADC_DATA.data1;
+					  BufferC[dacIndex] = ADC_DATA.data2;
+					  BufferD[dacIndex] = ADC_DATA.data3;
+					  BufferE[dacIndex] = DAC_BUFFER[dacIndex];
+					 // BufferA[dacIndex] = ADC_DATA.data2;
+
 					  dacIndex++;
 
-					  if (dacIndex>DAC_BUFFER_LENGTH) {
+					  if (dacIndex>=BUFFER_LENGTH) {
 						  dacIndex = 0;
 						  //STOP_BURST_LOG_TIMER
 						  STATE.VALUES.BITS.sendSineWave = 0;
@@ -249,42 +262,25 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
 	  if (STATE.VALUES.BITS.sendData) {
 		  if ( STATE.VALUES.BITS.BufferFull) {
 			  //STATE.VALUES.BITS.sendPeriodicUSB = 0;
-			  //handleBufferOutput();
+			  handleBufferOutput();
 			  STATE.VALUES.BITS.sendData = 0;
 			  STATE.VALUES.BITS.BufferFull = 0;
 		  } else {
 			  	  STATE.VALUES.BITS.unused7 = 1;
 		  }
-
 	  }
-
 
 	  if (STATE.VALUES.BITS.sendPeriodicUSB) {
 		  if (STATE.VALUES.BITS.stateTIM3) {
 		  //DAC_Send_DMA(&hi2c2,increment)
 		    STATE.VALUES.BITS.stateTIM3 = 0;
-		    handleStateTIM3();
+		    handleStateSendPeriodicData();
 		  }
-		    /*
-			TxBuffer[0] = increment;
-			increment++;
-			TxBuffer[1]	= ADC_DATA.data0;
-			TxBuffer[2]	= ADC_DATA.data1;
-			TxBuffer[3]	= ADC_DATA.data2;
-			TxBuffer[4]	= ADC_DATA.data3;
-			TxBuffer[5] = 0;
-			TxBuffer[6] = 0;
-		    send_uint16_array(TxBuffer);
-		    */
 	  }
-
 
 	  if (STATE.VALUES.BITS.USBreceived) {
 		  STATE.VALUES.BITS.USBreceived = 0;
-
 		  handleUSBReceived();
-
-		  //DAC_Send_DMA(&hi2c2,USBReceivedBuf[0]);
 	  }
 
 
@@ -453,7 +449,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -493,7 +489,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 12;
+  htim1.Init.Period = 20;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -518,7 +514,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM2;
-  sConfigOC.Pulse = 6;
+  sConfigOC.Pulse = 10;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_ENABLE;
