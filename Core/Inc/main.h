@@ -78,7 +78,19 @@ typedef union {
 	} Integers;
 } TxData_typedef;
 
-
+typedef union {
+	int16_t TxData[BUFFER_LENGTH*5+40];
+	struct {
+		uint16_t INITA[10];
+		uint16_t A[BUFFER_LENGTH];
+		uint16_t INITB[10];
+		uint16_t B[BUFFER_LENGTH];
+		uint16_t INITC[10];
+		uint16_t C[BUFFER_LENGTH];
+		uint16_t INITD[10];
+		uint16_t D[BUFFER_LENGTH];
+	} Buffers;
+} DATABUFFER_typedef;
 
 
 #define EEPROM_byte_length 8
@@ -93,37 +105,40 @@ typedef union {
 } EEPROM_Data_typedef;
 
 typedef struct {
-	union {
-	uint16_t STATE;
-	struct {
-        uint32_t USBreceived : 1;
-        uint32_t stateTIM1 : 1;
-        uint32_t stateTIM6 : 1;
-        uint32_t stateTIM3 : 1;
-        uint32_t buttonPress : 1;
-        uint32_t sendData : 1;
-        uint32_t stateTIM4 : 1;
-        uint32_t motorRamp : 1;
-        uint32_t stateTIM5 : 1;
-        uint32_t SW1 : 1;
-        uint32_t SW2 : 1;
-        uint32_t motorOn : 1;
-        uint32_t motorDirForward : 1;
-        uint32_t motorChangeState : 1;
-        uint32_t executeRandomPosition : 1;
-        uint32_t randomPositionUnitialized : 1;
-        uint32_t rampMotorOn :1;
-        uint32_t I2Cinterrupt:1;
-        uint32_t USBReceived:1;
-        uint32_t sendSineWave:1;
-        uint32_t stateTIM7:1;
-        uint32_t sendPeriodicUSB:1;
-        uint32_t BufferFull:1;
-        uint32_t unused7:1;
-        uint32_t unusedCHar:8;
-
-		} BITS;
-	} VALUES;
+    union {
+        struct {
+            uint32_t USBreceived : 1;
+            uint32_t stateTIM1 : 1;
+            uint32_t stateTIM6 : 1;
+            uint32_t stateTIM3 : 1;
+            uint32_t buttonPress : 1;
+            uint32_t sendData : 1;
+            uint32_t stateTIM4 : 1;
+            uint32_t motorRamp : 1;
+            uint32_t stateTIM5 : 1;
+            uint32_t SW1 : 1;
+            uint32_t SW2 : 1;
+            uint32_t motorOn : 1;
+            uint32_t motorDirForward : 1;
+            uint32_t motorChangeState : 1;
+            uint32_t executeRandomPosition : 1;
+            uint32_t randomPositionUnitialized : 1;
+            uint32_t rampMotorOn : 1;
+            uint32_t I2Cinterrupt : 1;
+            uint32_t USBReceived : 1;
+            uint32_t sendSineWave : 1;
+            uint32_t stateTIM7 : 1;
+            uint32_t sendPeriodicUSB : 1;
+            uint32_t BufferFull : 1;
+            uint32_t unused7 : 1;
+            uint32_t unusedCHar : 8;
+        } BITS;
+        uint32_t fullState; // 32-bit representation of the state
+        struct {
+            uint16_t STATElow;
+            uint16_t STATEhigh;
+        } PARTS;
+    } VALUES;
 } STATE_typedef;
 
 extern STATE_typedef STATE;
@@ -160,6 +175,7 @@ typedef struct {
 } coilParams_typedef;
 extern coilParams_typedef coilParams;
 
+void buildWaveform(coilParams_typedef *params);
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

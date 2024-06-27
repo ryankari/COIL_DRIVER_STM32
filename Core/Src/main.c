@@ -69,7 +69,14 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 //rx_buffer_typedef rx_buffer_struct;
 
 STATE_typedef STATE;
-coilParams_typedef coilParams;
+coilParams_typedef coilParams = {
+		.Amplitude = 25000,
+		.Offset = 0,
+		.Freq = 40,
+		.numCycles = 32,
+		.PtsPerCycle = 250,
+		.REGISTER = 0
+};
 
 // Used for ADC
 spi_buffer_typedef tx_spi_buffer,rx_spi_buffer;
@@ -108,12 +115,14 @@ uint16_t DAC_BUFFER[BUFFER_LENGTH];
 
 StateQueue_t stateQueue;
 int16_t TxBuffer[USBTXbufferSize];
-int16_t BufferA[BUFFER_LENGTH];
+
+DATABUFFER_typedef DATABUFFER;
+/*int16_t BufferA[BUFFER_LENGTH];
 int16_t BufferB[BUFFER_LENGTH];
 int16_t BufferC[BUFFER_LENGTH];
 int16_t BufferD[BUFFER_LENGTH];
 int16_t BufferE[BUFFER_LENGTH];
-
+*/
 uint16_t dacIndex;
 
 /* USER CODE END 0 */
@@ -127,7 +136,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
-
+	buildWaveform(&coilParams);
 	coilParams.Amplitude = 25000;
 	coilParams.Offset = 0;
 	coilParams.numCycles = 32;
@@ -200,11 +209,17 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
     //if (HAL_TIM_Base_Start_IT(&htim3) != HAL_OK)  {   Error_Handler();  }
     START_USB_UPDATE_PACKET_TIMER
 	START_BURST_LOG_TIMER
-    DAC_Send_DMA(&hi2c2,0);
+
 
 	  __HAL_TIM_SET_COUNTER(&htim6, 0);
 	  //START_BURST_LOG_TIMER
 	  STATE.VALUES.BITS.sendPeriodicUSB = 1;
+	  HAL_StatusTypeDef i2cStatus;
+	  HAL_Delay(100);
+	  int16_t DAC_ZERO;
+	  DAC_ZERO = -100;
+	  i2cStatus = DAC_Send(&hi2c2,32768+DAC_ZERO);
+
 	//initQueue(&stateQueue);
   /* USER CODE END 2 */
 
@@ -215,6 +230,7 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
 /*
 	  if (!isQueueEmpty(&stateQueue)) {
 	              State_t currentState = dequeue(&stateQueue);
@@ -241,11 +257,11 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
 			  STATE.VALUES.BITS.stateTIM7 = 0;
 	//	  handleStateTIM2();
 					  DAC_Send_DMA(&hi2c2,DAC_BUFFER[dacIndex]);
-					  BufferA[dacIndex] =  ADC_DATA.data0;
-					  BufferB[dacIndex] =  ADC_DATA.data1;
-					  BufferC[dacIndex] = ADC_DATA.data2;
-					  BufferD[dacIndex] = ADC_DATA.data3;
-					  BufferE[dacIndex] = DAC_BUFFER[dacIndex];
+					  DATABUFFER.Buffers.A[dacIndex] =  DAC_BUFFER[dacIndex];
+					  DATABUFFER.Buffers.B[dacIndex] =  ADC_DATA.data1;
+					  DATABUFFER.Buffers.C[dacIndex] = ADC_DATA.data2;
+					  DATABUFFER.Buffers.D[dacIndex] = ADC_DATA.data3;
+					  //BufferE[dacIndex] = DAC_BUFFER[dacIndex];
 					 // BufferA[dacIndex] = ADC_DATA.data2;
 
 					  dacIndex++;
@@ -255,11 +271,19 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
 						  //STOP_BURST_LOG_TIMER
 						  STATE.VALUES.BITS.sendSineWave = 0;
 						  STATE.VALUES.BITS.BufferFull = 1;
+						  DAC_Send_DMA(&hi2c2,0);
 					  }
 		  	  }
 	  }
 
 	  if (STATE.VALUES.BITS.sendData) {
+		  if (STATE.VALUES.BITS.stateTIM3) {
+			    STATE.VALUES.BITS.stateTIM3 = 0;
+			    handleBufferOutput();
+		  }
+		  }
+
+		  /*
 		  if ( STATE.VALUES.BITS.BufferFull) {
 			  //STATE.VALUES.BITS.sendPeriodicUSB = 0;
 			  handleBufferOutput();
@@ -268,7 +292,8 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
 		  } else {
 			  	  STATE.VALUES.BITS.unused7 = 1;
 		  }
-	  }
+		  */
+
 
 	  if (STATE.VALUES.BITS.sendPeriodicUSB) {
 		  if (STATE.VALUES.BITS.stateTIM3) {
@@ -283,8 +308,8 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
 		  handleUSBReceived();
 	  }
 
-
   }
+
   /* USER CODE END 3 */
 }
 
