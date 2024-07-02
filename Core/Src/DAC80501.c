@@ -56,10 +56,17 @@ HAL_StatusTypeDef DAC_Send_DMA(I2C_HandleTypeDef *hi2c_handle,int16_t Data) {
 
 void buildWaveform(coilParams_typedef *params)  {
 	extern uint16_t DAC_BUFFER[BUFFER_LENGTH];
+	extern TIM_HandleTypeDef htim7;
 	//htim7.Init.Prescaler = 50;
 	// if (HAL_TIM_Base_Init(&htim7) != HAL_OK)  {Error_Handler();  }
 	//Freq = Xtal/Prescalar/Counter/BUFFER_LENGTH/Cycles
 	float temp;
+	//htim2.Init.Prescaler = prescalar;
+	//if (HAL_TIM_Base_Init(&htim2) != HAL_OK) 	{ 		Error_Handler(); }
+	uint32_t Period = 20000*coilParams.numCycles/coilParams.Freq;
+	__HAL_TIM_SET_AUTORELOAD(&htim7,Period);
+	//if (HAL_TIM_Base_Init(&htim7) != HAL_OK) 	{ 		Error_Handler(); }
+
 	for (uint16_t i=0;i<BUFFER_LENGTH;i++) {
 		temp = 0.5*sinf(2*PI*i/BUFFER_LENGTH*coilParams.numCycles);
 		DAC_BUFFER[i] = (int16_t)(coilParams.Amplitude * temp)+coilParams.Offset;

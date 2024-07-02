@@ -198,6 +198,12 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define MOS1_Pin GPIO_PIN_0
+#define MOS1_GPIO_Port GPIOA
+#define MOS2_Pin GPIO_PIN_1
+#define MOS2_GPIO_Port GPIOA
+#define MOS4_Pin GPIO_PIN_3
+#define MOS4_GPIO_Port GPIOA
 #define SS_Pin_Pin GPIO_PIN_4
 #define SS_Pin_GPIO_Port GPIOA
 #define DRDY_Pin GPIO_PIN_4
