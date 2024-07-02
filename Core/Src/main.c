@@ -222,12 +222,7 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
 	  int16_t DAC_ZERO;
 	  DAC_ZERO = -100;
 	  i2cStatus = DAC_Send(&hi2c2,32768+DAC_ZERO);
-	  if (HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_3) != HAL_OK) {Error_Handler(); };
-	  HAL_GPIO_WritePin(MOS1_GPIO_Port, MOS1_Pin, GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(MOS2_GPIO_Port, MOS2_Pin, GPIO_PIN_SET);
-	  //HAL_GPIO_WritePin(MOS3_GPIO_Port, MOS3_Pin, GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(MOS4_GPIO_Port, MOS4_Pin, GPIO_PIN_SET);
-
+	  turnMotorOn();
 	//initQueue(&stateQueue);
   /* USER CODE END 2 */
 
@@ -875,15 +870,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA2 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  //GPIO_InitStruct.Alternate = GPIO_AF15_EVENTOUT;
-  GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB1 LED1_Pin LED2_Pin */

@@ -36,6 +36,7 @@ extern "C" {
 #include "ADS131M_Func.h"
 #include "EEPROM.h"
 #include "Queue.h"
+#include "motorFunctions.h"
 
 extern StateQueue_t stateQueue;
 
