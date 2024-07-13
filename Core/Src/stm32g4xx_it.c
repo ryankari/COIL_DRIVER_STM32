@@ -62,6 +62,7 @@ extern I2C_HandleTypeDef hi2c2;
 extern DMA_HandleTypeDef hdma_spi1_rx;
 extern DMA_HandleTypeDef hdma_spi1_tx;
 extern SPI_HandleTypeDef hspi1;
+extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim7;
@@ -264,6 +265,29 @@ void USB_LP_IRQHandler(void)
   /* USER CODE BEGIN USB_LP_IRQn 1 */
 
   /* USER CODE END USB_LP_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM2 global interrupt.
+  */
+void TIM2_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM2_IRQn 0 */
+	extern STATE_typedef STATE;
+	extern uint32_t pulseCount;
+  /* USER CODE END TIM2_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim2);
+  /* USER CODE BEGIN TIM2_IRQn 1 */
+STATE.VALUES.BITS.stateTIM2 = 1;
+if ((STATE.VALUES.BITS.motorOn) | (STATE.VALUES.BITS.rampMotorOn)) {
+	  if (STATE.VALUES.BITS.motorDirForward) {
+		  pulseCount++;
+	  } else {
+		  pulseCount--;
+	  }
+}
+
+  /* USER CODE END TIM2_IRQn 1 */
 }
 
 /**

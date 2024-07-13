@@ -41,7 +41,8 @@ extern "C" {
 extern StateQueue_t stateQueue;
 
 #define BUFFER_LENGTH 1000
-#define BUFFER_HEADER_LENGTH 10
+#define BUFFER_HEADER_LENGTH 24
+#define NUMBER_BUFFERS 4
 #define USBTXbufferSize (BUFFER_LENGTH+BUFFER_HEADER_LENGTH)
 //#define USBTXbufferLength 510
 #define USBReceiveLength 64
@@ -79,16 +80,17 @@ typedef union {
 	} Integers;
 } TxData_typedef;
 
+
 typedef union {
-	int16_t TxData[BUFFER_LENGTH*5+40];
+	int16_t TxData[BUFFER_LENGTH*NUMBER_BUFFERS+BUFFER_HEADER_LENGTH*NUMBER_BUFFERS];
 	struct {
-		uint16_t INITA[10];
+		uint16_t INITA[BUFFER_HEADER_LENGTH];
 		uint16_t A[BUFFER_LENGTH];
-		uint16_t INITB[10];
+		uint16_t INITB[BUFFER_HEADER_LENGTH];
 		uint16_t B[BUFFER_LENGTH];
-		uint16_t INITC[10];
+		uint16_t INITC[BUFFER_HEADER_LENGTH];
 		uint16_t C[BUFFER_LENGTH];
-		uint16_t INITD[10];
+		uint16_t INITD[BUFFER_HEADER_LENGTH];
 		uint16_t D[BUFFER_LENGTH];
 	} Buffers;
 } DATABUFFER_typedef;
@@ -131,7 +133,7 @@ typedef struct {
             uint32_t stateTIM7 : 1;
             uint32_t sendPeriodicUSB : 1;
             uint32_t BufferFull : 1;
-            uint32_t unused7 : 1;
+            uint32_t stateTIM2 : 1;
             uint32_t unusedCHar : 8;
         } BITS;
         uint32_t fullState; // 32-bit representation of the state

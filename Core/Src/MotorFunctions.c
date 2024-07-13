@@ -23,7 +23,9 @@ void turnMotorOn (void) {
 	} else {
 		ROTATE_REVERSE
 	}
+	STATE.VALUES.BITS.motorOn = 1;
 	ENABLE_MOTOR
+	 HAL_TIM_Base_Start_IT(&htim2);  // Enable the interrupt
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
 }
 
@@ -41,9 +43,9 @@ void setMotorDir(uint32_t motorDIR)
 void turnMotorOff (void) {
 
 	extern TIM_HandleTypeDef htim2;
+	STATE.VALUES.BITS.motorOn = 0;
 	DISABLE_MOTOR
 	HAL_GPIO_WritePin(MOS4_GPIO_Port, MOS4_Pin, 1);
-
 	HAL_TIM_Base_Stop_IT(&htim2);
 
 }

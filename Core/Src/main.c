@@ -126,7 +126,7 @@ int16_t BufferD[BUFFER_LENGTH];
 int16_t BufferE[BUFFER_LENGTH];
 */
 uint16_t dacIndex;
-
+uint32_t pulseCount;
 /* USER CODE END 0 */
 
 /**
@@ -222,7 +222,7 @@ HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
 	  int16_t DAC_ZERO;
 	  DAC_ZERO = -100;
 	  i2cStatus = DAC_Send(&hi2c2,32768+DAC_ZERO);
-	  turnMotorOn();
+	  turnMotorOff();
 	//initQueue(&stateQueue);
   /* USER CODE END 2 */
 
@@ -599,7 +599,7 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_ENABLE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
@@ -614,7 +614,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM2_Init 2 */
-
+  HAL_TIM_Base_Start_IT(&htim2);  // Enable the interrupt
   /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
 

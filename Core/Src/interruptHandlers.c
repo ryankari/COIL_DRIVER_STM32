@@ -18,6 +18,7 @@ void handleStateSendPeriodicData(void) {
 	extern ads_data_typedef ADC_DATA;
 	extern DATABUFFER_typedef DATABUFFER;
 	static uint16_t mux; // Used for testing DAC
+	extern uint32_t pulseCount;
 	int16_t ID;
 
 	switch (mux)  {
@@ -33,7 +34,8 @@ void handleStateSendPeriodicData(void) {
 		DATABUFFER.Buffers.INITA[7]	= ADC_DATA.data3;
 		DATABUFFER.Buffers.INITA[8] = STATE.VALUES.PARTS.STATElow;
 		DATABUFFER.Buffers.INITA[9] = STATE.VALUES.PARTS.STATEhigh;
-		send_uint16_array(&DATABUFFER.TxData[0],USBTXbufferSize);
+		DATABUFFER.Buffers.INITA[10] = pulseCount;
+		send_uint16_array(&DATABUFFER.TxData[USBTXbufferSize*0],USBTXbufferSize);
 		break;
 	case 1:
 		ID = ID_Buffer1;
@@ -47,7 +49,8 @@ void handleStateSendPeriodicData(void) {
 		DATABUFFER.Buffers.INITB[7]	= ADC_DATA.data3;
 		DATABUFFER.Buffers.INITB[8] = STATE.VALUES.PARTS.STATElow;
 		DATABUFFER.Buffers.INITB[9] = STATE.VALUES.PARTS.STATEhigh;
-		send_uint16_array(&DATABUFFER.TxData[1010],USBTXbufferSize);
+		DATABUFFER.Buffers.INITB[10] = pulseCount;
+		send_uint16_array(&DATABUFFER.TxData[USBTXbufferSize*1],USBTXbufferSize);
 		break;
 	case 2:
 		ID = ID_Buffer2;
@@ -61,7 +64,8 @@ void handleStateSendPeriodicData(void) {
 		DATABUFFER.Buffers.INITC[7]	= ADC_DATA.data3;
 		DATABUFFER.Buffers.INITC[8] = STATE.VALUES.PARTS.STATElow;
 		DATABUFFER.Buffers.INITC[9] = STATE.VALUES.PARTS.STATEhigh;
-		send_uint16_array(&DATABUFFER.TxData[2020],USBTXbufferSize);
+		DATABUFFER.Buffers.INITC[10] = pulseCount;
+		send_uint16_array(&DATABUFFER.TxData[USBTXbufferSize*2],USBTXbufferSize);
 		break;
 	case 3:
 		ID = ID_Buffer3;
@@ -75,7 +79,8 @@ void handleStateSendPeriodicData(void) {
 		DATABUFFER.Buffers.INITD[7]	= ADC_DATA.data3;
 		DATABUFFER.Buffers.INITD[8] = STATE.VALUES.PARTS.STATElow;
 		DATABUFFER.Buffers.INITD[9] = STATE.VALUES.PARTS.STATEhigh;
-		send_uint16_array(&DATABUFFER.TxData[3030],USBTXbufferSize);
+		DATABUFFER.Buffers.INITD[10] = pulseCount;
+		send_uint16_array(&DATABUFFER.TxData[USBTXbufferSize*3],USBTXbufferSize);
 		break;
 	default:
 		ID = 0;
