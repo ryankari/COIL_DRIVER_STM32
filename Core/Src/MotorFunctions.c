@@ -18,8 +18,12 @@ int16_t randomArray[100] = { -15423, 17361, -25204, -3661, 24449, -26753, -10906
 void turnMotorOn (void) {
 	//extern int16_t pulseCount;
 	extern TIM_HandleTypeDef htim2;
-
-	HAL_GPIO_WritePin(MOS1_GPIO_Port, MOS1_Pin, 0);
+	if (STATE.VALUES.BITS.motorDirForward == 0) {
+		ROTATE_FORWARD
+	} else {
+		ROTATE_REVERSE
+	}
+	ENABLE_MOTOR
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
 }
 
@@ -28,10 +32,8 @@ void setMotorDir(uint32_t motorDIR)
 	extern STATE_typedef STATE;
 	if (motorDIR == 1) {
 		STATE.VALUES.BITS.motorDirForward = 0;
-		HAL_GPIO_WritePin(MOS2_GPIO_Port, MOS2_Pin, 0);
 	} else {
 		STATE.VALUES.BITS.motorDirForward = 1;
-		HAL_GPIO_WritePin(MOS2_GPIO_Port, MOS2_Pin, 1);
 	}
 
 }
@@ -39,7 +41,9 @@ void setMotorDir(uint32_t motorDIR)
 void turnMotorOff (void) {
 
 	extern TIM_HandleTypeDef htim2;
-	HAL_GPIO_WritePin(MOS1_GPIO_Port, MOS1_Pin, 1);
+	DISABLE_MOTOR
+	HAL_GPIO_WritePin(MOS4_GPIO_Port, MOS4_Pin, 1);
+
 	HAL_TIM_Base_Stop_IT(&htim2);
 
 }
@@ -56,9 +60,10 @@ void updateSpeedandDuty (uint32_t prescalar,uint32_t dutyCycle) {
 	htim2.Init.Prescaler = prescalar;
 	if (HAL_TIM_Base_Init(&htim2) != HAL_OK) 	{ 		Error_Handler(); }
 		//duty cycle expressed as 0 to 100%
-	if ((dutyCycle > 0) && (dutyCycle < 100)) {
-		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, htim2.Init.Period*(100-dutyCycle)/100);
-	}
+
+	//if ((dutyCycle > 0) && (dutyCycle < 100)) {
+	//	__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_3, htim2.Init.Period*(100-dutyCycle)/100);
+	//}
 
 }
 
