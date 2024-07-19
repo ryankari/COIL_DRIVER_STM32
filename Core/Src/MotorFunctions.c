@@ -45,7 +45,7 @@ void turnMotorOff (void) {
 	extern TIM_HandleTypeDef htim2;
 	STATE.VALUES.BITS.motorOn = 0;
 	DISABLE_MOTOR
-	HAL_GPIO_WritePin(MOS4_GPIO_Port, MOS4_Pin, 1);
+	//HAL_GPIO_WritePin(MOS4_GPIO_Port, MOS4_Pin, 1);
 	HAL_TIM_Base_Stop_IT(&htim2);
 
 }

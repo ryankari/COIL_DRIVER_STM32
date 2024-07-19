@@ -192,7 +192,7 @@ DAC_Initialize(&hi2c2);
 
 ADS131M08_init(&STATE_SPI);
 
-HAL_GPIO_WritePin(GPIOB, LED1_Pin,1);
+HAL_GPIO_WritePin(GPIOB, LED1_Pin,0);
 HAL_GPIO_WritePin(GPIOB, LED2_Pin,1);
 
 

@@ -38,8 +38,10 @@
 
 	enum motorCMDarray {OFF,MOTOR_ON,RAMP_UP_DOWN, RAMP_UP};
    #define PWM_TIM_BASE_START  if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK) { Error_Handler(); }
-#define ENABLE_MOTOR HAL_GPIO_WritePin(MOS1_GPIO_Port, MOS1_Pin, 0); //Enable Motor
-#define DISABLE_MOTOR 	HAL_GPIO_WritePin(MOS1_GPIO_Port, MOS1_Pin, 1); //Disable Motor
-#define ROTATE_FORWARD HAL_GPIO_WritePin(MOS2_GPIO_Port, MOS2_Pin, 1);
-#define ROTATE_REVERSE	HAL_GPIO_WritePin(MOS2_GPIO_Port, MOS2_Pin, 0);
+	#define ENABLE_MOTOR HAL_GPIO_WritePin(MOS1_GPIO_Port, MOS1_Pin, 0); //Enable Motor
+	#define DISABLE_MOTOR 	HAL_GPIO_WritePin(MOS1_GPIO_Port, MOS1_Pin, 1); //Disable Motor
+	#define ROTATE_FORWARD HAL_GPIO_WritePin(MOS2_GPIO_Port, MOS2_Pin, 1);
+	#define ROTATE_REVERSE	HAL_GPIO_WritePin(MOS2_GPIO_Port, MOS2_Pin, 0);
+	#define ENGAGE_ON HAL_GPIO_WritePin(MOS4_GPIO_Port, MOS4_Pin, 1); //Enable Motor
+	#define ENGAGE_OFF HAL_GPIO_WritePin(MOS4_GPIO_Port, MOS4_Pin, 0); //Enable Motor
 #endif

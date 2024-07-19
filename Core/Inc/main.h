@@ -124,7 +124,7 @@ typedef struct {
             uint32_t motorOn : 1;
             uint32_t motorDirForward : 1;
             uint32_t motorChangeState : 1;
-            uint32_t executeRandomPosition : 1;
+            uint32_t engageState : 1;
             uint32_t randomPositionUnitialized : 1;
             uint32_t rampMotorOn : 1;
             uint32_t I2Cinterrupt : 1;

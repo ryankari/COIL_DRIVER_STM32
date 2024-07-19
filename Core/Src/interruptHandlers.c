@@ -102,6 +102,7 @@ int16_t convert_to_signed(uint16_t data) {
 }
 
 void handleUSBReceived(void) {
+	//dataType 1 - Parameters, 2 - Start Test, 3 - Not Used, 4 - Motor Functions, 5 Engage Pins
 	extern I2C_HandleTypeDef hi2c2;
 	extern uint16_t USBReceivedBuf[USBReceiveLength];
 	extern uint16_t dacIndex;
@@ -110,36 +111,33 @@ void handleUSBReceived(void) {
 	  uint16_t dataType;
 	  dataType  = USBReceivedBuf[0];
 
-	  if (dataType == 1) {
-		  //Parameters
-		  coilParams.Amplitude = USBReceivedBuf[1];
-		  coilParams.Offset = USBReceivedBuf[2];
-		  coilParams.Freq = USBReceivedBuf[3];
-		  coilParams.numCycles = USBReceivedBuf[4];
-		  buildWaveform(&coilParams);
-
-	  } else if (dataType == 2) {
-		  //Start burst logging and execute test}
-		  //START_BURST_LOG_TIMER
-		  	  if (USBReceivedBuf[1] == 1) {
-				  STATE.VALUES.BITS.sendSineWave = 1;
-				  dacIndex = 0;
-				  STATE.VALUES.BITS.BufferFull = 0;
-		  	  } else {
-				  DAC_Send_DMA(&hi2c2,convert_to_signed(USBReceivedBuf[2]));
-		  	  }
-
-		  } else if (dataType == 3) {
+	  switch (dataType) {
+		  case 1:
+			  coilParams.Amplitude = USBReceivedBuf[1];
+			  coilParams.Offset = USBReceivedBuf[2];
+			  coilParams.Freq = USBReceivedBuf[3];
+			  coilParams.numCycles = USBReceivedBuf[4];
+			  buildWaveform(&coilParams);
+			  break;
+		  case 2:
+			  //Start burst logging and execute test}
+			  //START_BURST_LOG_TIMER
+			  	  if (USBReceivedBuf[1] == 1) {
+					  STATE.VALUES.BITS.sendSineWave = 1;
+					  dacIndex = 0;
+					  STATE.VALUES.BITS.BufferFull = 0;
+			  	  } else {
+					  DAC_Send_DMA(&hi2c2,convert_to_signed(USBReceivedBuf[2]));
+			  	  }
+			  	  break;
+		  case 3:
 			  //Send USB packet data
 			  STATE.VALUES.BITS.sendData = 1;
 			  STATE.VALUES.BITS.sendPeriodicUSB = 0;
-
-
-		  } else if (dataType == 4) {
-
+			  break;
+		  case 4: // Motor functions
 			  if (USBReceivedBuf[2] == 1) {
 				  STATE.VALUES.BITS.motorDirForward = 1;
-
 			  } else {
 				  STATE.VALUES.BITS.motorDirForward = 0;
 			  }
@@ -147,11 +145,22 @@ void handleUSBReceived(void) {
 		  	  if (USBReceivedBuf[1] == 1) {
 		  		 updateSpeedandDuty(USBReceivedBuf[3],USBReceivedBuf[4]);
 		  		 turnMotorOn();
-
 		  	  } else {
 		  		 turnMotorOff();
 		  	  }
+		  	  break;
+		  case 5: //Engage functions
+			  if (USBReceivedBuf[1] == 1) {
+			  				  STATE.VALUES.BITS.engageState = 1;
+			  				HAL_GPIO_WritePin(GPIOB, LED1_Pin,1);
+			  			  } else {
+			  				  STATE.VALUES.BITS.engageState = 0;
+			  				HAL_GPIO_WritePin(GPIOB, LED1_Pin,0);
+			  			  }
 
-		  }
+		  default:
+			  break;
+	  }
+
 }
 
